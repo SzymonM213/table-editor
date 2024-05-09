@@ -101,7 +101,6 @@ public class SpreadsheetEditor extends JFrame {
 //            System.out.println("No cyclic dependency");
             expressions[row][col].updateExpression(text);
         }
-        expressions[0][0].printDependents();
     }
 
     public static void main(String[] args) {

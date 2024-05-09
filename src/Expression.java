@@ -20,36 +20,45 @@ public class Expression {
 
     public void updateExpression(String expression) {
         this.expression = expression;
-        reevaluate();
+        reevaluate(this);
     }
 
     public void updateExpression(String expression, String exception) {
         this.expression = expression;
         this.value = exception;
-        reevaluateDependents();
+        reevaluateDependents(this);
     }
 
-    public void reevaluate() {
+    public void reevaluate(Expression caller) {
+        System.out.println("Reevaluating " + this.row + " " + this.col);
         if (expression.isEmpty()) {
             this.value = "";
-            return;
-        }
-        if (expression.matches("[A-Z]+\\d+")) {
+        } else if (expression.matches("[A-Z]+\\d+")) {
             this.value = dependencies.get(expression).getValue();
-            return;
+        } else {
+            String[] tokens = expression.split("\\+");
+            int sum = 0;
+            for (String token : tokens) {
+                sum += Integer.parseInt(token);
+            }
+            this.value = sum;
         }
-        String[] tokens = expression.split("\\+");
-        int sum = 0;
-        for (String token : tokens) {
-            sum += Integer.parseInt(token);
-        }
-        this.value = sum;
-        reevaluateDependents();
+        reevaluateDependents(caller);
     }
 
-    public void reevaluateDependents() {
+//    public void reevaluateDependents() {
+//        System.out.println("Reevaluating dependents of " + this.row + " " + this.col);
+//        for (Expression dependent : dependents.values()) {
+//            dependent.reevaluate(false);
+//        }
+//    }
+
+    public void reevaluateDependents(Expression caller) {
+        System.out.println("Reevaluating dependents of " + this.row + " " + this.col);
         for (Expression dependent : dependents.values()) {
-            dependent.reevaluate();
+            if (dependent != caller) {
+                dependent.reevaluate(caller);
+            }
         }
     }
 
@@ -63,9 +72,7 @@ public class Expression {
 
     public void setValue(Object value) {
         this.value = value;
-        for (Expression dependent : dependents.values()) {
-            dependent.reevaluate();
-        }
+        reevaluateDependents(this);
     }
 
     @Override
