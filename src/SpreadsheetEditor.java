@@ -21,7 +21,7 @@ public class SpreadsheetEditor extends JFrame {
         expressions = new Expression[ROWS][COLS];
         for (int i = 0; i < ROWS; i++) {
             for (int j = 0; j < COLS; j++) {
-                expressions[i][j] = new Expression();
+                expressions[i][j] = new Expression(i, j);
             }
         }
 
@@ -31,7 +31,6 @@ public class SpreadsheetEditor extends JFrame {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, expressions[row][column].getValue(), isSelected, hasFocus, row, column);
-
                 return c;
             }
 
@@ -47,10 +46,62 @@ public class SpreadsheetEditor extends JFrame {
                     int col = e.getColumn();
                     if (col >= 0) {
                         String value = (String) model.getValueAt(row, col);
-                        expressions[row][col].update_expression(value);
+//                        expressions[row][col].update_expression(value);
+                        updateCell(row, col, value);
                     }
             }
         });
+    }
+
+    private List<String> getDependencies(String expression) {
+        List<String> dependencies = new ArrayList<>();
+        String[] tokens = expression.split("\\+");
+        for (String token : tokens) {
+            if (token.matches("[A-Z]+\\d+")) {
+                dependencies.add(token);
+            }
+        }
+        return dependencies;
+    }
+
+    private boolean isCyclicDependency(Expression cell, Expression dependent, boolean firstCall) {
+//        System.out.println("Checking " + cell.row + " " + cell.col + ", " + dependent.row + " " + dependent.col);
+        if (cell == dependent && !firstCall) {
+            return true;
+        }
+        for (Expression dependency : cell.getDependencies()) {
+            if (isCyclicDependency(dependency, dependent, false)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String coordinatesToCell(int row, int col) {
+        return (char)('A' + col) + "" + (row + 1);
+    }
+
+    private void updateCell(int row, int col, String text) {
+
+
+        for (Expression dependency : expressions[row][col].getDependencies()) {
+            dependency.removeDependent(expressions[row][col]);
+        }
+        expressions[row][col].clearDependencies();
+        List<String> dependencies = getDependencies(text);
+        for (String dependency : dependencies) {
+            int depCol = dependency.charAt(0) - 'A';
+            int depRow = Integer.parseInt(dependency.substring(1)) - 1;
+            expressions[depRow][depCol].addDependent(coordinatesToCell(row, col), expressions[row][col]);
+            expressions[row][col].addDependency(dependency, expressions[depRow][depCol]);
+        }
+        if (isCyclicDependency(expressions[row][col], expressions[row][col], true)) {
+            expressions[row][col].updateExpression(text, "Cyclic dependency");
+        } else {
+//            System.out.println("No cyclic dependency");
+            expressions[row][col].updateExpression(text);
+        }
+        expressions[0][0].printDependents();
     }
 
     public static void main(String[] args) {
