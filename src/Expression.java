@@ -1,6 +1,4 @@
-import javax.swing.table.DefaultTableModel;
 import java.util.*;
-import java.util.function.BinaryOperator;
 
 public class Expression {
     public final int row;
@@ -8,9 +6,8 @@ public class Expression {
     private String expression;
     private Result value;
     public boolean hasValue;
-    private DefaultTableModel model;
     private Map<String, Expression> dependencies; // Cells on which this cell depends
-    private Map<String, Expression> dependents; // Cells which value depends on this cell
+    private final Map<String, Expression> dependents; // Cells which value depends on this cell
 
     public Expression(int row, int col) {
         this.row = row;
@@ -38,8 +35,10 @@ public class Expression {
     private List<String> validateAndTokenize() {
         List<String> tokens = new LinkedList<>();
         int i = 1;
+        System.out.println("Expression: " + this.expression);
         while (i < this.expression.length()) {
             char c = this.expression.charAt(i);
+            System.out.println("Char: " + c);
             if (Character.isUpperCase(c)) {
                 if (i == this.expression.length() - 1) return null;
                 if (this.expression.charAt(i + 1) >= '0' && this.expression.charAt(i + 1) <= '9') {
@@ -50,10 +49,9 @@ public class Expression {
                         sb.append(this.expression.charAt(i + 1));
                         i++;
                     }
-                    System.out.println("Dependency: " + sb.toString());
+                    System.out.println("Dependency: " + sb);
                     if (!this.dependencies.containsKey(sb.toString())) return null;
                     if (!this.dependencies.get(sb.toString()).hasValue) return null;
-                    Result value = this.dependencies.get(sb.toString()).getValue();
                     tokens.add(this.dependencies.get(sb.toString()).getValue().toString());
                     i++;
                 } else {
@@ -68,6 +66,7 @@ public class Expression {
                             !Result.oneArgFunctions.containsKey(sb.toString())) {
                         return null;
                     }
+                    System.out.println("Function: " + sb);
                     tokens.add(sb.toString());
                     i += 1;
                 }
@@ -87,7 +86,7 @@ public class Expression {
                 }
                 i++;
                 tokens.add(sb.toString());
-                System.out.println("Number: " + sb.toString());
+                System.out.println("Number: " + sb);
             } else if (c == '-' && (i == 1 || this.expression.charAt(i - 1) == '(' || this.expression.charAt(i - 1) == ',')) {
                 // Unary minus
                 tokens.add("-1");
@@ -96,7 +95,13 @@ public class Expression {
             } else if (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == ',') {
                 // Operator
                 if (c != '(' && i == 1) return null;
-                if (c==')' && tokens.get(tokens.size()-1).equals("(")) return null;
+                if (i > 1) {
+                    String last = tokens.get(tokens.size() - 1);
+                    if (c == ')' && last.equals("(")) return null;
+                    if (!last.matches("-?\\d+(.\\d+)?|\\)")
+                            && !Result.twoArgFunctions.containsKey(last)
+                            && Result.oneArgFunctions.containsKey(last)) return null;
+                }
                 tokens.add(String.valueOf(c));
                 i++;
             } else if (c == ' ') {
@@ -105,12 +110,14 @@ public class Expression {
                 return null;
             }
         }
+        if (!tokens.get(tokens.size()-1).matches("-?\\d+(.\\d+)?|\\)")) {
+            System.out.println("null 1");
+            return null;
+        }
         return tokens;
     }
 
     public void reevaluate(Expression caller) {
-        System.out.println("Reevaluating " + this.row + " " + this.col + " caller: " + caller.row + " " + caller.col);
-        System.out.println("Expression: " + this.expression);
         if (this.expression.isEmpty()) {
             this.value = new Result(0);
         } else if (!this.expression.startsWith("=") && !this.expression.matches("\\d+")) {
@@ -119,21 +126,6 @@ public class Expression {
             this.hasValue = true;
             this.value = new Result(Integer.parseInt(this.expression));
         } else {
-//            System.out.println("Reevaluating " + this.row + " " + this.col + " caller: " + caller.row + " " + caller.col);
-//            this.hasValue = true;
-//            String exp = this.expression.substring(1);
-//            if (exp.matches("[A-Z]+\\d+")) {
-////            this.value = dependencies.get(expression).getValue();
-//                System.out.println(dependencies.get(exp));
-//                this.value = dependencies.get(exp).getValue();
-//            } else {
-//                String[] tokens = exp.split("\\+");
-//                int sum = 0;
-//                for (String token : tokens) {
-//                    sum += Integer.parseInt(token);
-//                }
-//                this.value = new Result(sum);
-//            }
             List<String> tokens = validateAndTokenize();
             this.value = new Result(tokens);
             this.hasValue = true;
@@ -141,13 +133,6 @@ public class Expression {
         }
         reevaluateDependents(caller);
     }
-
-//    public void reevaluateDependents() {
-//        System.out.println("Reevaluating dependents of " + this.row + " " + this.col);
-//        for (Expression dependent : dependents.values()) {
-//            dependent.reevaluate(false);
-//        }
-//    }
 
     public void reevaluateDependents(Expression caller) {
         System.out.println("Reevaluating dependents of " + this.row + " " + this.col);
@@ -158,20 +143,11 @@ public class Expression {
         }
     }
 
-    public boolean error() {
-        return this.value.getTextValue() != null;
-    }
-
     public Result getValue() {
         if (this.expression.isEmpty()) {
             return new Result("");
         }
         return this.value;
-    }
-
-    public void setValue(Result value) {
-        this.value = value;
-        reevaluateDependents(this);
     }
 
     @Override
@@ -187,21 +163,6 @@ public class Expression {
         this.dependencies = new HashMap<>();
     }
 
-    public void printDependents() {
-        System.out.println("Dependents of " + this.row + " " + this.col);
-        for (Expression dependent : this.dependents.values()) {
-            System.out.println(dependent.row + " " + dependent.col);
-        }
-    }
-
-//    private void setExpression(String expression) {
-//        this.expression = expression;
-//        for (Expression dependency : this.dependencies.values()) {
-//            dependency.removeDependent(this);
-//        }
-//        this.dependencies = new HashMap<>();
-//    }
-
     public void addDependent(String key, Expression dependent) {
         System.out.println("localization: " + key);
         this.dependents.put(key, dependent);
@@ -213,10 +174,6 @@ public class Expression {
 
     public List<Expression> getDependencies() {
         return new ArrayList<>(this.dependencies.values());
-    }
-
-    public List<Expression> getDependents() {
-        return new ArrayList<>(this.dependents.values());
     }
 
     public static List<String> getExpressionDependencies(String expression) {
@@ -247,16 +204,4 @@ public class Expression {
         }
         return dependencies;
     }
-
-//    @Override
-//    public boolean equals(Object obj) {
-//        if (obj == this) return true;
-//        if (!(obj instanceof Expression)) return false;
-//        Expression e = (Expression) obj;
-//        return e.row == this.row && e.col == this.col;
-//    }
-
-
-
-
 }

@@ -1,17 +1,14 @@
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.table.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.awt.*;
 
 public class SpreadsheetEditor extends JFrame {
     public static final int COLS = 5;
     public static final int ROWS = 10;
-    private JTable table;
-    private CustomTableModel model;
-    private Expression[][] expressions;
-    private boolean isUpdating = false;
+    private final JTable table;
+    private final CustomTableModel model;
+    private final Expression[][] expressions;
     private int selectedRow = 0;
     private int selectedCol = 0;
 
@@ -35,8 +32,7 @@ public class SpreadsheetEditor extends JFrame {
                 if (expressions[row][column].hasValue) {
                     value = expressions[row][column].getValue();
                 }
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                return c;
+                return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             }
 
         });
@@ -44,83 +40,20 @@ public class SpreadsheetEditor extends JFrame {
         JScrollPane scrollPane = new JScrollPane(table);
         getContentPane().add(scrollPane);
 
-        model.addTableModelListener(new TableModelListener() {
-            @Override
-            public void tableChanged(TableModelEvent e) {
-                    int row = e.getFirstRow();
-                    int col = e.getColumn();
-                    if (col >= 0) {
-                        String value = (String) model.getValueAt(row, col);
+        model.addTableModelListener(e -> {
+                int row = e.getFirstRow();
+                int col = e.getColumn();
+                if (col >= 0) {
+                    String value = (String) model.getValueAt(row, col);
 //                        expressions[row][col].update_expression(value);
-                        updateCell(row, col, value);
-                    }
-                    System.out.println("Previously Selected " + selectedRow + " " + selectedCol);
-                    selectedCol = table.getSelectedColumn();
-                    selectedRow = table.getSelectedRow();
-                    System.out.println("Selected " + selectedRow + " " + selectedCol);
-            }
+                    updateCell(row, col, value);
+                }
+                System.out.println("Previously Selected " + selectedRow + " " + selectedCol);
+                selectedCol = table.getSelectedColumn();
+                selectedRow = table.getSelectedRow();
+                System.out.println("Selected " + selectedRow + " " + selectedCol);
         });
-
-//        table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-//            @Override
-//            public void valueChanged(ListSelectionEvent e) {
-//                int row = selectedRow;
-//                int col = selectedCol;
-//                if ((selectedCol != table.getSelectedRow() || selectedRow != table.getSelectedColumn()) && row >= 0 && col >= 0) {
-//                    String value = (String) model.getValueAt(row, col);
-//                    if (value != null) {
-//                        updateCell(row, col, value);
-//                    }
-//                    updateTableAppearance(expressions[row][col], row, col);
-//                }
-//                selectedRow = table.getSelectedRow();
-//                selectedCol = table.getSelectedColumn();
-//            }
-//        });
-//
-//        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-//            @Override
-//            public void valueChanged(ListSelectionEvent e) {
-//                int row = selectedRow;
-//                int col = selectedCol;
-//                if ((selectedCol != table.getSelectedRow() || selectedRow != table.getSelectedColumn()) && row >= 0 && col >= 0) {
-//                    String value = (String) model.getValueAt(row, col);
-//                    if (value != null) {
-//                        updateCell(row, col, value);
-//                    }
-//                    updateTableAppearance(expressions[row][col], row, col);
-//                }
-//                selectedRow = table.getSelectedRow();
-//                selectedCol = table.getSelectedColumn();
-//            }
-//        });
-
     }
-
-    private void updateTableAppearance(Expression caller, int row, int col) {
-//        if (expressions[row][col] != caller) {
-//            model.setValueAt(expressions[row][col].getValue(), row, col);
-//            for (Expression dependent : expressions[row][col].getDependents()) {
-//                updateTableAppearance(expressions[row][col], dependent.row, dependent.col);
-//            }
-//        }
-    }
-
-//    private List<String> getDependencies(String expression) {
-//        if (!expression.startsWith("=")) {
-//            return new ArrayList<>();
-//        }
-//        expression = expression.substring(1);
-//        List<String> dependencies = new ArrayList<>();
-//        String[] tokens = expression.split("\\+");
-//        for (String token : tokens) {
-//            if (token.matches("[A-Z]+\\d+")) {
-//                System.out.println("Dependency: " + token);
-//                dependencies.add(token);
-//            }
-//        }
-//        return dependencies;
-//    }
 
     private boolean isCyclicDependency(Expression cell, Expression dependent, boolean firstCall) {
         System.out.println("Checking " + cell.row + " " + cell.col + ", " + dependent.row + " " + dependent.col);
@@ -167,11 +100,7 @@ public class SpreadsheetEditor extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                new SpreadsheetEditor().setVisible(true);
-            }
-        });
+        SwingUtilities.invokeLater(() -> new SpreadsheetEditor().setVisible(true));
     }
 }
 

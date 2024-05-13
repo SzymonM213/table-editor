@@ -29,14 +29,6 @@ public class Result {
         this.doubleValue = doubleValue;
     }
 
-    private static <T> List<T> slice(List<T> list, int start, int end) {
-        List<T> result = new ArrayList<>();
-        for (int i = start; i < end; i++) {
-            result.add(list.get(i));
-        }
-        return result;
-    }
-
     public Result(List<String> tokens) {
         if (tokens == null) {
             this.textValue = "#NAME?1";
@@ -124,17 +116,13 @@ public class Result {
     }
 
     private Result applyOperator(Result a, Result b, char op) {
-        switch (op) {
-            case '+':
-                return add(b, a);
-            case '-':
-                return subtract(b, a);
-            case '*':
-                return multiply(b, a);
-            case '/':
-                return divide(b, a);
-        }
-        return new Result("#NAME?7");
+        return switch (op) {
+            case '+' -> add(b, a);
+            case '-' -> subtract(b, a);
+            case '*' -> multiply(b, a);
+            case '/' -> divide(b, a);
+            default -> new Result("#NAME?7");
+        };
     }
 
     private Result oneArgOperation(List<String> tokens) {
@@ -146,20 +134,25 @@ public class Result {
         List<String> arg = new ArrayList<>();
         int openedParentheses = 0;
         while (openedParentheses >= 0 && this.parseIndex != tokens.size() && !tokens.get(this.parseIndex).equals(")")) {
-            System.out.println("Token: " + tokens.get(this.parseIndex));
-            if (tokens.get(this.parseIndex).equals("(")) {
-                openedParentheses++;
-            } else if (tokens.get(this.parseIndex).equals(")")) {
-                openedParentheses--;
-            }
-            arg.add(tokens.get(this.parseIndex));
-            this.parseIndex++;
+            openedParentheses = getOpenedParentheses(tokens, arg, openedParentheses);
         }
         if (this.parseIndex == tokens.size() || !tokens.get(this.parseIndex).equals(")")) {
             return new Result("#NAME?9");
         }
         Result result = new Result(arg);
         return oneArgFunctions.get(operation).apply(result);
+    }
+
+    private int getOpenedParentheses(List<String> tokens, List<String> arg, int openedParentheses) {
+        System.out.println("Token: " + tokens.get(this.parseIndex));
+        if (tokens.get(this.parseIndex).equals("(")) {
+            openedParentheses++;
+        } else if (tokens.get(this.parseIndex).equals(")")) {
+            openedParentheses--;
+        }
+        arg.add(tokens.get(this.parseIndex));
+        this.parseIndex++;
+        return openedParentheses;
     }
 
     private Result twoArgOperation(List<String> tokens) {
@@ -173,14 +166,7 @@ public class Result {
         List<String> arg2 = new ArrayList<>();
         int openedParentheses = 0;
         while (this.parseIndex != tokens.size() && (openedParentheses > 0 || !tokens.get(this.parseIndex).equals(","))) {
-            System.out.println("Token: " + tokens.get(this.parseIndex));
-            if (tokens.get(this.parseIndex).equals("(")) {
-                openedParentheses++;
-            } else if (tokens.get(this.parseIndex).equals(")")) {
-                openedParentheses--;
-            }
-            arg1.add(tokens.get(this.parseIndex));
-            this.parseIndex++;
+            openedParentheses = getOpenedParentheses(tokens, arg1, openedParentheses);
         }
         System.out.println("end of arg1");
         if (this.parseIndex == tokens.size()) {
@@ -188,14 +174,7 @@ public class Result {
         }
         this.parseIndex++;
         while (this.parseIndex != tokens.size() && (openedParentheses > 0 || !tokens.get(this.parseIndex).equals(")"))) {
-            System.out.println("Token: " + tokens.get(this.parseIndex));
-            if (tokens.get(this.parseIndex).equals("(")) {
-                openedParentheses++;
-            } else if (tokens.get(this.parseIndex).equals(")")) {
-                openedParentheses--;
-            }
-            arg2.add(tokens.get(this.parseIndex));
-            this.parseIndex++;
+            openedParentheses = getOpenedParentheses(tokens, arg2, openedParentheses);
         }
         if (this.parseIndex == tokens.size()) {
             return new Result("#NAME?12");
@@ -288,14 +267,6 @@ public static Result subtract(Result a, Result b) {
         } else {
             return new Result(Math.abs(a.doubleValue));
         }
-    }
-
-    public String getTextValue() {
-        return textValue;
-    }
-
-    public double getDoubleValue() {
-        return this.doubleValue;
     }
 
     public String toString() {
