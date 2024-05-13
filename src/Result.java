@@ -4,15 +4,15 @@ import java.util.Stack;
 
 public class Result {
     private String textValue;
-    private int intValue;
+    private double doubleValue;
     private int parseIndex;
 
     public Result(String textValue) {
         this.textValue = textValue;
     }
 
-    public Result(int intValue) {
-        this.intValue = intValue;
+    public Result(double doubleValue) {
+        this.doubleValue = doubleValue;
     }
 
     private static <T> List<T> slice(List<T> list, int start, int end) {
@@ -36,20 +36,25 @@ public class Result {
             System.out.println("End of tokens");
 
             int openedParentheses = 0;
-            Result result1 = null;
             Stack<Result> values = new Stack<>();
             Stack<Character> operators = new Stack<>();
             this.parseIndex = 0;
             while (this.parseIndex < tokens.size()) {
                 if (tokens.get(this.parseIndex).equals("ADD") || tokens.get(this.parseIndex).equals("SUB") ||
                         tokens.get(this.parseIndex).equals("MUL") || tokens.get(this.parseIndex).equals("DIV")) {
-                    values.push(twoArgOperation(slice(tokens, this.parseIndex, tokens.size())));
+                    // two arguments function
+                    System.out.println("Two arguments function: " + tokens.get(this.parseIndex));
+//                    values.push(twoArgOperation(slice(tokens, this.parseIndex, tokens.size())));
+                    values.push(twoArgOperation(tokens));
                 } else if (tokens.get(this.parseIndex).equals("NEG") || tokens.get(this.parseIndex).equals("ABS")) {
+                    // one argument function
                     values.push(oneArgOperation(slice(tokens, this.parseIndex, tokens.size())));
                 } else if (tokens.get(this.parseIndex).equals("(")) {
+                    // open parentheses
                     openedParentheses++;
                     operators.push('(');
                 } else if (tokens.get(this.parseIndex).equals(")")) {
+                    // close parentheses
                     openedParentheses--;
                     if (openedParentheses < 0) {
                         this.textValue = "#NAME?2";
@@ -65,24 +70,33 @@ public class Result {
                             values.push(applyOperator(values.pop(), values.pop(), operators.pop()));
                         }
                     }
+                    operators.pop();
                 } else if (tokens.get(this.parseIndex).equals("+") || tokens.get(this.parseIndex).equals("-") ||
                         tokens.get(this.parseIndex).equals("*") || tokens.get(this.parseIndex).equals("/")) {
+                    // operators
                     System.out.println("Operator: " + tokens.get(this.parseIndex));
                     while (!operators.isEmpty() && hasPrecedence(tokens.get(this.parseIndex).charAt(0), operators.peek())) {
                         values.push(applyOperator(values.pop(), values.pop(), operators.pop()));
                     }
                     operators.push(tokens.get(this.parseIndex).charAt(0));
                 } else if (tokens.get(this.parseIndex).equals(",")) {
+                    // argument separator (should not be here)
                     this.textValue = "#NAME?4";
                     return;
-                } else if (tokens.get(this.parseIndex).matches("\\d+")) {
-                    values.push(new Result(Integer.parseInt(tokens.get(this.parseIndex))));
+                } else if (tokens.get(this.parseIndex).matches("-?\\d+(\\.\\d+)?")) {
+                    System.out.println("Number: " + tokens.get(this.parseIndex));
+                    values.push(new Result(Double.parseDouble(tokens.get(this.parseIndex))));
                 } else {
                     values.push(new Result(tokens.get(this.parseIndex)));
                 }
                 this.parseIndex++;
             }
             while (!operators.isEmpty()) {
+                System.out.println("Operator: " + operators.peek());
+                System.out.println("Values:");
+                for (Result value : values) {
+                    System.out.println(value);
+                }
                 values.push(applyOperator(values.pop(), values.pop(), operators.pop()));
             }
             if (values.size() != 1) {
@@ -90,7 +104,7 @@ public class Result {
             } else {
                 Result result = values.pop();
                 this.textValue = result.textValue;
-                this.intValue = result.intValue;
+                this.doubleValue = result.doubleValue;
             }
         }
     }
@@ -151,6 +165,7 @@ public class Result {
 
     private Result twoArgOperation(List<String> tokens) {
         String operation = tokens.get(this.parseIndex);
+        System.out.println("Operation: " + operation);
         if (this.parseIndex + 1 == tokens.size() ||  !tokens.get(this.parseIndex + 1).equals("(")) {
             return new Result("#NAME?10.5");
         }
@@ -159,6 +174,7 @@ public class Result {
         List<String> arg2 = new ArrayList<>();
         int openedParentheses = 0;
         while (this.parseIndex != tokens.size() && (openedParentheses > 0 || !tokens.get(this.parseIndex).equals(","))) {
+            System.out.println("Token: " + tokens.get(this.parseIndex));
             if (tokens.get(this.parseIndex).equals("(")) {
                 openedParentheses++;
             } else if (tokens.get(this.parseIndex).equals(")")) {
@@ -167,11 +183,13 @@ public class Result {
             arg1.add(tokens.get(this.parseIndex));
             this.parseIndex++;
         }
+        System.out.println("end of arg1");
         if (this.parseIndex == tokens.size()) {
             return new Result("#NAME?11");
         }
         this.parseIndex++;
         while (this.parseIndex != tokens.size() && (openedParentheses > 0 || !tokens.get(this.parseIndex).equals(")"))) {
+            System.out.println("Token: " + tokens.get(this.parseIndex));
             if (tokens.get(this.parseIndex).equals("(")) {
                 openedParentheses++;
             } else if (tokens.get(this.parseIndex).equals(")")) {
@@ -195,6 +213,7 @@ public class Result {
         System.out.println("End of arg2");
         Result result1 = new Result(arg1);
         Result result2 = new Result(arg2);
+        System.out.println("Result1: " + result1 + " Result2: " + result2);
         return switch (operation) {
             case "ADD" -> add(result1, result2);
             case "SUB" -> subtract(result1, result2);
@@ -210,7 +229,8 @@ public class Result {
         } else if (b.textValue != null) {
             return new Result(b.textValue);
         } else {
-            return new Result(a.intValue + b.intValue);
+            System.out.println("Adding " + a.doubleValue + " and " + b.doubleValue);
+            return new Result(a.doubleValue + b.doubleValue);
         }
     }
 
@@ -220,7 +240,7 @@ public static Result subtract(Result a, Result b) {
         } else if (b.textValue != null) {
             return new Result(b.textValue);
         } else {
-            return new Result(a.intValue - b.intValue);
+            return new Result(b.doubleValue - a.doubleValue);
         }
     }
 
@@ -230,20 +250,21 @@ public static Result subtract(Result a, Result b) {
         } else if (b.textValue != null) {
             return new Result(b.textValue);
         } else {
-            return new Result(a.intValue * b.intValue);
+            return new Result(a.doubleValue * b.doubleValue);
         }
     }
 
     public static Result divide(Result a, Result b) {
+        System.out.println("Dividing " + a + " and " + b);
         if (a.textValue != null) {
             return new Result(a.textValue);
         } else if (b.textValue != null) {
             return new Result(b.textValue);
-        } else if (b.intValue == 0) {
+        } else if (a.doubleValue == 0) {
             return new Result("DIV/0!");
         }
         else {
-            return new Result(a.intValue / b.intValue);
+            return new Result(b.doubleValue / a.doubleValue);
         }
     }
 
@@ -251,7 +272,7 @@ public static Result subtract(Result a, Result b) {
         if (a.textValue != null) {
             return new Result(a.textValue);
         } else {
-            return new Result(-a.intValue);
+            return new Result(-a.doubleValue);
         }
     }
 
@@ -259,7 +280,7 @@ public static Result subtract(Result a, Result b) {
         if (a.textValue != null) {
             return new Result(a.textValue);
         } else {
-            return new Result(Math.abs(a.intValue));
+            return new Result(Math.abs(a.doubleValue));
         }
     }
 
@@ -267,15 +288,15 @@ public static Result subtract(Result a, Result b) {
         return textValue;
     }
 
-    public int getIntValue() {
-        return intValue;
+    public double getDoubleValue() {
+        return this.doubleValue;
     }
 
     public String toString() {
         if (textValue != null) {
             return textValue;
         } else {
-            return Integer.toString(intValue);
+            return Double.toString(this.doubleValue);
         }
     }
 

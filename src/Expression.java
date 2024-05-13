@@ -66,10 +66,16 @@ public class Expression {
                     tokens.add(sb.toString());
                     i += 1;
                 }
-            } else if (Character.isDigit(c)) {
+            } else if (Character.isDigit(c) || c == '-' && (i == 1 || this.expression.charAt(i - 1) == '(')) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(c);
-                while (i + 1 < this.expression.length() && Character.isDigit(this.expression.charAt(i + 1))) {
+                boolean dot = false;
+                while (i + 1 < this.expression.length() && (Character.isDigit(this.expression.charAt(i + 1)) ||
+                        this.expression.charAt(i + 1) == '.')) {
+                    if (this.expression.charAt(i + 1) == '.') {
+                        if (dot) return null;
+                        dot = true;
+                    }
                     sb.append(this.expression.charAt(i + 1));
                     i++;
                 }
