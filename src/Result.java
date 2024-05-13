@@ -1,11 +1,25 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class Result {
     private String textValue;
     private double doubleValue;
     private int parseIndex;
+    public static final Map<String, Function<Result, Result>> oneArgFunctions = Map.of(
+            "NEG", Result::negative,
+            "ABS", Result::absolute
+    );
+    public static final Map<String, BiFunction<Result, Result, Result>> twoArgFunctions = Map.of(
+            "ADD", Result::add,
+            "SUB", Result::subtract,
+            "MUL", Result::multiply,
+            "DIV", Result::divide,
+            "POW", Result::power
+    );
 
     public Result(String textValue) {
         this.textValue = textValue;
@@ -40,15 +54,15 @@ public class Result {
             Stack<Character> operators = new Stack<>();
             this.parseIndex = 0;
             while (this.parseIndex < tokens.size()) {
-                if (tokens.get(this.parseIndex).equals("ADD") || tokens.get(this.parseIndex).equals("SUB") ||
-                        tokens.get(this.parseIndex).equals("MUL") || tokens.get(this.parseIndex).equals("DIV")) {
+                System.out.println("Token: " + tokens.get(this.parseIndex) + " openedParentheses: " + openedParentheses);
+                if (twoArgFunctions.containsKey(tokens.get(this.parseIndex))) {
                     // two arguments function
                     System.out.println("Two arguments function: " + tokens.get(this.parseIndex));
-//                    values.push(twoArgOperation(slice(tokens, this.parseIndex, tokens.size())));
                     values.push(twoArgOperation(tokens));
-                } else if (tokens.get(this.parseIndex).equals("NEG") || tokens.get(this.parseIndex).equals("ABS")) {
+                } else if (oneArgFunctions.containsKey(tokens.get(this.parseIndex))) {
                     // one argument function
-                    values.push(oneArgOperation(slice(tokens, this.parseIndex, tokens.size())));
+                    System.out.println("One argument function: " + tokens.get(this.parseIndex));
+                    values.push(oneArgOperation(tokens));
                 } else if (tokens.get(this.parseIndex).equals("(")) {
                     // open parentheses
                     openedParentheses++;
@@ -61,14 +75,7 @@ public class Result {
                         return;
                     }
                     while (operators.peek() != '(') {
-                        openedParentheses--;
-                        if (openedParentheses < 0) {
-                            this.textValue = "#NAME?3";
-                            return;
-                        }
-                        while (operators.peek() != '(') {
-                            values.push(applyOperator(values.pop(), values.pop(), operators.pop()));
-                        }
+                        values.push(applyOperator(values.pop(), values.pop(), operators.pop()));
                     }
                     operators.pop();
                 } else if (tokens.get(this.parseIndex).equals("+") || tokens.get(this.parseIndex).equals("-") ||
@@ -119,13 +126,13 @@ public class Result {
     private Result applyOperator(Result a, Result b, char op) {
         switch (op) {
             case '+':
-                return add(a, b);
+                return add(b, a);
             case '-':
-                return subtract(a, b);
+                return subtract(b, a);
             case '*':
-                return multiply(a, b);
+                return multiply(b, a);
             case '/':
-                return divide(a, b);
+                return divide(b, a);
         }
         return new Result("#NAME?7");
     }
@@ -138,29 +145,21 @@ public class Result {
         this.parseIndex += 2;
         List<String> arg = new ArrayList<>();
         int openedParentheses = 0;
-        while (openedParentheses >= 0 && this.parseIndex != tokens.size() && !tokens.get(this.parseIndex).equals(",")) {
+        while (openedParentheses >= 0 && this.parseIndex != tokens.size() && !tokens.get(this.parseIndex).equals(")")) {
+            System.out.println("Token: " + tokens.get(this.parseIndex));
             if (tokens.get(this.parseIndex).equals("(")) {
                 openedParentheses++;
             } else if (tokens.get(this.parseIndex).equals(")")) {
                 openedParentheses--;
             }
-            if (openedParentheses > 0) {
-                arg.add(tokens.get(this.parseIndex));
-            }
+            arg.add(tokens.get(this.parseIndex));
             this.parseIndex++;
         }
         if (this.parseIndex == tokens.size() || !tokens.get(this.parseIndex).equals(")")) {
             return new Result("#NAME?9");
         }
         Result result = new Result(arg);
-        switch (operation) {
-            case "NEG":
-                return negative(result);
-            case "ABS":
-                return absolute(result);
-            default:
-                return new Result("#NAME?10");
-        }
+        return oneArgFunctions.get(operation).apply(result);
     }
 
     private Result twoArgOperation(List<String> tokens) {
@@ -214,13 +213,7 @@ public class Result {
         Result result1 = new Result(arg1);
         Result result2 = new Result(arg2);
         System.out.println("Result1: " + result1 + " Result2: " + result2);
-        return switch (operation) {
-            case "ADD" -> add(result1, result2);
-            case "SUB" -> subtract(result1, result2);
-            case "MUL" -> multiply(result1, result2);
-            case "DIV" -> divide(result1, result2);
-            default -> new Result("#NAME?13");
-        };
+        return twoArgFunctions.get(operation).apply(result1, result2);
     }
 
     public static Result add(Result a, Result b) {
@@ -240,7 +233,7 @@ public static Result subtract(Result a, Result b) {
         } else if (b.textValue != null) {
             return new Result(b.textValue);
         } else {
-            return new Result(b.doubleValue - a.doubleValue);
+            return new Result(a.doubleValue - b.doubleValue);
         }
     }
 
@@ -264,7 +257,20 @@ public static Result subtract(Result a, Result b) {
             return new Result("DIV/0!");
         }
         else {
-            return new Result(b.doubleValue / a.doubleValue);
+            return new Result(a.doubleValue / b.doubleValue);
+        }
+    }
+
+    public static Result power(Result a, Result b) {
+        if (a.textValue != null) {
+            return new Result(a.textValue);
+        } else if (b.textValue != null) {
+            return new Result(b.textValue);
+        } else if (a.doubleValue == 0 && b.doubleValue < 0) {
+            return new Result("DIV/0!");
+        }
+        else {
+            return new Result(Math.pow(a.doubleValue, b.doubleValue));
         }
     }
 

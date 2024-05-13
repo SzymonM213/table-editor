@@ -6,12 +6,12 @@ import java.util.List;
 import java.awt.*;
 
 public class SpreadsheetEditor extends JFrame {
+    public static final int COLS = 5;
+    public static final int ROWS = 10;
     private JTable table;
     private CustomTableModel model;
     private Expression[][] expressions;
     private boolean isUpdating = false;
-    private int COLS = 5;
-    private int ROWS = 10;
     private int selectedRow = 0;
     private int selectedCol = 0;
 

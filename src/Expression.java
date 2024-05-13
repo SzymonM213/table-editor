@@ -36,7 +36,6 @@ public class Expression {
 
     // returns null if the expression is invalid
     private List<String> validateAndTokenize() {
-        List<String> functions = Arrays.asList("ADD", "SUB", "MUL", "DIV", "NEG", "ABS", "POW", "MOD");
         List<String> tokens = new LinkedList<>();
         int i = 1;
         while (i < this.expression.length()) {
@@ -44,6 +43,7 @@ public class Expression {
             if (Character.isUpperCase(c)) {
                 if (i == this.expression.length() - 1) return null;
                 if (this.expression.charAt(i + 1) >= '0' && this.expression.charAt(i + 1) <= '9') {
+                    // Cell reference
                     StringBuilder sb = new StringBuilder();
                     sb.append(c);
                     while(i + 1 < this.expression.length() && this.expression.charAt(i + 1) >= '0' && this.expression.charAt(i + 1) <= '9') {
@@ -51,22 +51,28 @@ public class Expression {
                         i++;
                     }
                     System.out.println("Dependency: " + sb.toString());
+                    if (!this.dependencies.containsKey(sb.toString())) return null;
+                    if (!this.dependencies.get(sb.toString()).hasValue) return null;
+                    Result value = this.dependencies.get(sb.toString()).getValue();
                     tokens.add(this.dependencies.get(sb.toString()).getValue().toString());
                     i++;
                 } else {
+                    // Function name
                     StringBuilder sb = new StringBuilder();
                     sb.append(c);
                     while (i + 1 < this.expression.length() && Character.isLetter(this.expression.charAt(i + 1))) {
                         sb.append(this.expression.charAt(i + 1));
                         i++;
                     }
-                    if (!functions.contains(sb.toString())) {
+                    if (!Result.twoArgFunctions.containsKey(sb.toString()) &&
+                            !Result.oneArgFunctions.containsKey(sb.toString())) {
                         return null;
                     }
                     tokens.add(sb.toString());
                     i += 1;
                 }
-            } else if (Character.isDigit(c) || c == '-' && (i == 1 || this.expression.charAt(i - 1) == '(')) {
+            } else if (Character.isDigit(c)) {
+                // Number
                 StringBuilder sb = new StringBuilder();
                 sb.append(c);
                 boolean dot = false;
@@ -82,7 +88,15 @@ public class Expression {
                 i++;
                 tokens.add(sb.toString());
                 System.out.println("Number: " + sb.toString());
+            } else if (c == '-' && (i == 1 || this.expression.charAt(i - 1) == '(' || this.expression.charAt(i - 1) == ',')) {
+                // Unary minus
+                tokens.add("-1");
+                tokens.add("*");
+                i++;
             } else if (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == ',') {
+                // Operator
+                if (c != '(' && i == 1) return null;
+                if (c==')' && tokens.get(tokens.size()-1).equals("(")) return null;
                 tokens.add(String.valueOf(c));
                 i++;
             } else if (c == ' ') {
@@ -101,7 +115,7 @@ public class Expression {
             this.value = new Result(0);
         } else if (!this.expression.startsWith("=") && !this.expression.matches("\\d+")) {
             this.hasValue = false;
-        } else if (this.expression.matches("\\d+")) {
+        } else if (this.expression.matches("-?\\d+")) {
             this.hasValue = true;
             this.value = new Result(Integer.parseInt(this.expression));
         } else {
@@ -224,8 +238,11 @@ public class Expression {
                     sb.append(expression.charAt(i));
                     i++;
                 }
-                System.out.println("chuj Dependency: " + sb.toString());
-                dependencies.add(sb.toString());
+                String cell = sb.toString();
+                if (cell.charAt(0) - 'A' < SpreadsheetEditor.COLS &&
+                        Integer.parseInt(cell.substring(1)) <= SpreadsheetEditor.ROWS) {
+                    dependencies.add(sb.toString());
+                }
             }
         }
         return dependencies;
