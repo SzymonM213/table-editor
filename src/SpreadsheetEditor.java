@@ -45,26 +45,19 @@ public class SpreadsheetEditor extends JFrame {
                 int col = e.getColumn();
                 if (col >= 0) {
                     String value = (String) model.getValueAt(row, col);
-//                        expressions[row][col].update_expression(value);
                     updateCell(row, col, value);
                 }
-                System.out.println("Previously Selected " + selectedRow + " " + selectedCol);
                 selectedCol = table.getSelectedColumn();
                 selectedRow = table.getSelectedRow();
-                System.out.println("Selected " + selectedRow + " " + selectedCol);
         });
     }
 
     private boolean isCyclicDependency(Expression cell, Expression dependent, boolean firstCall) {
-        System.out.println("Checking " + cell.row + " " + cell.col + ", " + dependent.row + " " + dependent.col);
         if (cell == dependent && !firstCall) {
-            System.out.println("chuj");
             return true;
         }
         for (Expression dependency : cell.getDependencies()) {
-            System.out.println("checkingDependency: " + dependency.row + " " + dependency.col);
             if (isCyclicDependency(dependency, dependent, false)) {
-                System.out.println("chuj2");
                 return true;
             }
         }
@@ -84,17 +77,14 @@ public class SpreadsheetEditor extends JFrame {
         expressions[row][col].clearDependencies();
         List<String> dependencies = Expression.getExpressionDependencies(text);
         for (String dependency : dependencies) {
-            System.out.println("New Dependency: " + dependency);
             int depCol = dependency.charAt(0) - 'A';
             int depRow = Integer.parseInt(dependency.substring(1)) - 1;
             expressions[depRow][depCol].addDependent(coordinatesToCell(row, col), expressions[row][col]);
             expressions[row][col].addDependency(dependency, expressions[depRow][depCol]);
         }
         if (isCyclicDependency(expressions[row][col], expressions[row][col], true)) {
-            System.out.println("Cyclic dependency");
             expressions[row][col].updateExpression(text, "#REF!");
         } else {
-//            System.out.println("No cyclic dependency");
             expressions[row][col].updateExpression(text);
         }
     }

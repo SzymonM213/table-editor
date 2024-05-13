@@ -35,10 +35,8 @@ public class Expression {
     private List<String> validateAndTokenize() {
         List<String> tokens = new LinkedList<>();
         int i = 1;
-        System.out.println("Expression: " + this.expression);
         while (i < this.expression.length()) {
             char c = this.expression.charAt(i);
-            System.out.println("Char: " + c);
             if (Character.isUpperCase(c)) {
                 if (i == this.expression.length() - 1) return null;
                 if (this.expression.charAt(i + 1) >= '0' && this.expression.charAt(i + 1) <= '9') {
@@ -49,7 +47,6 @@ public class Expression {
                         sb.append(this.expression.charAt(i + 1));
                         i++;
                     }
-                    System.out.println("Dependency: " + sb);
                     if (!this.dependencies.containsKey(sb.toString())) return null;
                     if (!this.dependencies.get(sb.toString()).hasValue) return null;
                     tokens.add(this.dependencies.get(sb.toString()).getValue().toString());
@@ -66,7 +63,6 @@ public class Expression {
                             !Result.oneArgFunctions.containsKey(sb.toString())) {
                         return null;
                     }
-                    System.out.println("Function: " + sb);
                     tokens.add(sb.toString());
                     i += 1;
                 }
@@ -86,7 +82,6 @@ public class Expression {
                 }
                 i++;
                 tokens.add(sb.toString());
-                System.out.println("Number: " + sb);
             } else if (c == '-' && (i == 1 || this.expression.charAt(i - 1) == '(' || this.expression.charAt(i - 1) == ',')) {
                 // Unary minus
                 tokens.add("-1");
@@ -111,7 +106,6 @@ public class Expression {
             }
         }
         if (!tokens.get(tokens.size()-1).matches("-?\\d+(.\\d+)?|\\)")) {
-            System.out.println("null 1");
             return null;
         }
         return tokens;
@@ -135,7 +129,6 @@ public class Expression {
     }
 
     public void reevaluateDependents(Expression caller) {
-        System.out.println("Reevaluating dependents of " + this.row + " " + this.col);
         for (Expression dependent : dependents.values()) {
             if (dependent != caller) {
                 dependent.reevaluate(caller);
@@ -164,7 +157,6 @@ public class Expression {
     }
 
     public void addDependent(String key, Expression dependent) {
-        System.out.println("localization: " + key);
         this.dependents.put(key, dependent);
     }
 
@@ -180,7 +172,6 @@ public class Expression {
         if (!expression.startsWith("=")) {
             return new ArrayList<>();
         }
-        // exclude all 'UpperCaseLetter' + 'Digit' cells from the expression
         expression = expression.substring(1);
         List<String> dependencies = new ArrayList<>();
         for (int i = 0; i < expression.length(); i++) {

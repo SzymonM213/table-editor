@@ -33,27 +33,16 @@ public class Result {
         if (tokens == null) {
             this.textValue = "#NAME?1";
         } else {
-
-            // print tokens
-            System.out.println("Tokens:");
-            for (String token : tokens) {
-                System.out.println(token);
-            }
-            System.out.println("End of tokens");
-
             int openedParentheses = 0;
             Stack<Result> values = new Stack<>();
             Stack<Character> operators = new Stack<>();
             this.parseIndex = 0;
             while (this.parseIndex < tokens.size()) {
-                System.out.println("Token: " + tokens.get(this.parseIndex) + " openedParentheses: " + openedParentheses);
                 if (twoArgFunctions.containsKey(tokens.get(this.parseIndex))) {
                     // two arguments function
-                    System.out.println("Two arguments function: " + tokens.get(this.parseIndex));
                     values.push(twoArgOperation(tokens));
                 } else if (oneArgFunctions.containsKey(tokens.get(this.parseIndex))) {
                     // one argument function
-                    System.out.println("One argument function: " + tokens.get(this.parseIndex));
                     values.push(oneArgOperation(tokens));
                 } else if (tokens.get(this.parseIndex).equals("(")) {
                     // open parentheses
@@ -73,7 +62,6 @@ public class Result {
                 } else if (tokens.get(this.parseIndex).equals("+") || tokens.get(this.parseIndex).equals("-") ||
                         tokens.get(this.parseIndex).equals("*") || tokens.get(this.parseIndex).equals("/")) {
                     // operators
-                    System.out.println("Operator: " + tokens.get(this.parseIndex));
                     while (!operators.isEmpty() && hasPrecedence(tokens.get(this.parseIndex).charAt(0), operators.peek())) {
                         values.push(applyOperator(values.pop(), values.pop(), operators.pop()));
                     }
@@ -83,7 +71,6 @@ public class Result {
                     this.textValue = "#NAME?4";
                     return;
                 } else if (tokens.get(this.parseIndex).matches("-?\\d+(\\.\\d+)?")) {
-                    System.out.println("Number: " + tokens.get(this.parseIndex));
                     values.push(new Result(Double.parseDouble(tokens.get(this.parseIndex))));
                 } else {
                     values.push(new Result(tokens.get(this.parseIndex)));
@@ -91,11 +78,6 @@ public class Result {
                 this.parseIndex++;
             }
             while (!operators.isEmpty()) {
-                System.out.println("Operator: " + operators.peek());
-                System.out.println("Values:");
-                for (Result value : values) {
-                    System.out.println(value);
-                }
                 values.push(applyOperator(values.pop(), values.pop(), operators.pop()));
             }
             if (values.size() != 1) {
@@ -144,7 +126,6 @@ public class Result {
     }
 
     private int getOpenedParentheses(List<String> tokens, List<String> arg, int openedParentheses) {
-        System.out.println("Token: " + tokens.get(this.parseIndex));
         if (tokens.get(this.parseIndex).equals("(")) {
             openedParentheses++;
         } else if (tokens.get(this.parseIndex).equals(")")) {
@@ -157,7 +138,6 @@ public class Result {
 
     private Result twoArgOperation(List<String> tokens) {
         String operation = tokens.get(this.parseIndex);
-        System.out.println("Operation: " + operation);
         if (this.parseIndex + 1 == tokens.size() ||  !tokens.get(this.parseIndex + 1).equals("(")) {
             return new Result("#NAME?10.5");
         }
@@ -168,7 +148,6 @@ public class Result {
         while (this.parseIndex != tokens.size() && (openedParentheses > 0 || !tokens.get(this.parseIndex).equals(","))) {
             openedParentheses = getOpenedParentheses(tokens, arg1, openedParentheses);
         }
-        System.out.println("end of arg1");
         if (this.parseIndex == tokens.size()) {
             return new Result("#NAME?11");
         }
@@ -179,19 +158,8 @@ public class Result {
         if (this.parseIndex == tokens.size()) {
             return new Result("#NAME?12");
         }
-        System.out.println("Arg1:");
-        for (String token : arg1) {
-            System.out.println(token);
-        }
-        System.out.println("End of arg1");
-        System.out.println("Arg2:");
-        for (String token : arg2) {
-            System.out.println(token);
-        }
-        System.out.println("End of arg2");
         Result result1 = new Result(arg1);
         Result result2 = new Result(arg2);
-        System.out.println("Result1: " + result1 + " Result2: " + result2);
         return twoArgFunctions.get(operation).apply(result1, result2);
     }
 
@@ -201,7 +169,6 @@ public class Result {
         } else if (b.textValue != null) {
             return new Result(b.textValue);
         } else {
-            System.out.println("Adding " + a.doubleValue + " and " + b.doubleValue);
             return new Result(a.doubleValue + b.doubleValue);
         }
     }
@@ -227,7 +194,6 @@ public static Result subtract(Result a, Result b) {
     }
 
     public static Result divide(Result a, Result b) {
-        System.out.println("Dividing " + a + " and " + b);
         if (a.textValue != null) {
             return new Result(a.textValue);
         } else if (b.textValue != null) {
