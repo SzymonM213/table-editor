@@ -12,6 +12,8 @@ public class SpreadsheetEditor extends JFrame {
     private boolean isUpdating = false;
     private int COLS = 5;
     private int ROWS = 10;
+    private int selectedRow = 0;
+    private int selectedCol = 0;
 
     public SpreadsheetEditor() {
         setTitle("Spreadsheet Editor");
@@ -30,7 +32,10 @@ public class SpreadsheetEditor extends JFrame {
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, expressions[row][column].getValue(), isSelected, hasFocus, row, column);
+                if (expressions[row][column].hasValue) {
+                    value = expressions[row][column].getValue();
+                }
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 return c;
             }
 
@@ -49,28 +54,84 @@ public class SpreadsheetEditor extends JFrame {
 //                        expressions[row][col].update_expression(value);
                         updateCell(row, col, value);
                     }
+                    System.out.println("Previously Selected " + selectedRow + " " + selectedCol);
+                    selectedCol = table.getSelectedColumn();
+                    selectedRow = table.getSelectedRow();
+                    System.out.println("Selected " + selectedRow + " " + selectedCol);
             }
         });
+
+//        table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+//            @Override
+//            public void valueChanged(ListSelectionEvent e) {
+//                int row = selectedRow;
+//                int col = selectedCol;
+//                if ((selectedCol != table.getSelectedRow() || selectedRow != table.getSelectedColumn()) && row >= 0 && col >= 0) {
+//                    String value = (String) model.getValueAt(row, col);
+//                    if (value != null) {
+//                        updateCell(row, col, value);
+//                    }
+//                    updateTableAppearance(expressions[row][col], row, col);
+//                }
+//                selectedRow = table.getSelectedRow();
+//                selectedCol = table.getSelectedColumn();
+//            }
+//        });
+//
+//        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+//            @Override
+//            public void valueChanged(ListSelectionEvent e) {
+//                int row = selectedRow;
+//                int col = selectedCol;
+//                if ((selectedCol != table.getSelectedRow() || selectedRow != table.getSelectedColumn()) && row >= 0 && col >= 0) {
+//                    String value = (String) model.getValueAt(row, col);
+//                    if (value != null) {
+//                        updateCell(row, col, value);
+//                    }
+//                    updateTableAppearance(expressions[row][col], row, col);
+//                }
+//                selectedRow = table.getSelectedRow();
+//                selectedCol = table.getSelectedColumn();
+//            }
+//        });
+
     }
 
-    private List<String> getDependencies(String expression) {
-        List<String> dependencies = new ArrayList<>();
-        String[] tokens = expression.split("\\+");
-        for (String token : tokens) {
-            if (token.matches("[A-Z]+\\d+")) {
-                dependencies.add(token);
-            }
-        }
-        return dependencies;
+    private void updateTableAppearance(Expression caller, int row, int col) {
+//        if (expressions[row][col] != caller) {
+//            model.setValueAt(expressions[row][col].getValue(), row, col);
+//            for (Expression dependent : expressions[row][col].getDependents()) {
+//                updateTableAppearance(expressions[row][col], dependent.row, dependent.col);
+//            }
+//        }
     }
+
+//    private List<String> getDependencies(String expression) {
+//        if (!expression.startsWith("=")) {
+//            return new ArrayList<>();
+//        }
+//        expression = expression.substring(1);
+//        List<String> dependencies = new ArrayList<>();
+//        String[] tokens = expression.split("\\+");
+//        for (String token : tokens) {
+//            if (token.matches("[A-Z]+\\d+")) {
+//                System.out.println("Dependency: " + token);
+//                dependencies.add(token);
+//            }
+//        }
+//        return dependencies;
+//    }
 
     private boolean isCyclicDependency(Expression cell, Expression dependent, boolean firstCall) {
-//        System.out.println("Checking " + cell.row + " " + cell.col + ", " + dependent.row + " " + dependent.col);
+        System.out.println("Checking " + cell.row + " " + cell.col + ", " + dependent.row + " " + dependent.col);
         if (cell == dependent && !firstCall) {
+            System.out.println("chuj");
             return true;
         }
         for (Expression dependency : cell.getDependencies()) {
+            System.out.println("checkingDependency: " + dependency.row + " " + dependency.col);
             if (isCyclicDependency(dependency, dependent, false)) {
+                System.out.println("chuj2");
                 return true;
             }
         }
@@ -88,15 +149,17 @@ public class SpreadsheetEditor extends JFrame {
             dependency.removeDependent(expressions[row][col]);
         }
         expressions[row][col].clearDependencies();
-        List<String> dependencies = getDependencies(text);
+        List<String> dependencies = Expression.getExpressionDependencies(text);
         for (String dependency : dependencies) {
+            System.out.println("New Dependency: " + dependency);
             int depCol = dependency.charAt(0) - 'A';
             int depRow = Integer.parseInt(dependency.substring(1)) - 1;
             expressions[depRow][depCol].addDependent(coordinatesToCell(row, col), expressions[row][col]);
             expressions[row][col].addDependency(dependency, expressions[depRow][depCol]);
         }
         if (isCyclicDependency(expressions[row][col], expressions[row][col], true)) {
-            expressions[row][col].updateExpression(text, "Cyclic dependency");
+            System.out.println("Cyclic dependency");
+            expressions[row][col].updateExpression(text, "#REF!");
         } else {
 //            System.out.println("No cyclic dependency");
             expressions[row][col].updateExpression(text);
