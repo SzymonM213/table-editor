@@ -11,14 +11,17 @@ public class Result {
     private int parseIndex;
     public static final Map<String, Function<Result, Result>> oneArgFunctions = Map.of(
             "NEG", Result::negative,
-            "ABS", Result::absolute
+            "ABS", Result::absolute,
+            "SQRT", Result::root
     );
     public static final Map<String, BiFunction<Result, Result, Result>> twoArgFunctions = Map.of(
             "ADD", Result::add,
             "SUB", Result::subtract,
             "MUL", Result::multiply,
             "DIV", Result::divide,
-            "POW", Result::power
+            "POW", Result::power,
+            "MIN", Result::min,
+            "MAX", Result::max
     );
 
     public Result(String textValue) {
@@ -219,6 +222,26 @@ public static Result subtract(Result a, Result b) {
         }
     }
 
+    public static Result min(Result a, Result b) {
+        if (a.textValue != null) {
+            return new Result(a.textValue);
+        } else if (b.textValue != null) {
+            return new Result(b.textValue);
+        } else {
+            return new Result(Math.min(a.doubleValue, b.doubleValue));
+        }
+    }
+
+    public static Result max(Result a, Result b) {
+        if (a.textValue != null) {
+            return new Result(a.textValue);
+        } else if (b.textValue != null) {
+            return new Result(b.textValue);
+        } else {
+            return new Result(Math.max(a.doubleValue, b.doubleValue));
+        }
+    }
+
     public static Result negative(Result a) {
         if (a.textValue != null) {
             return new Result(a.textValue);
@@ -232,6 +255,16 @@ public static Result subtract(Result a, Result b) {
             return new Result(a.textValue);
         } else {
             return new Result(Math.abs(a.doubleValue));
+        }
+    }
+
+    public static Result root(Result a) {
+        if (a.textValue != null) {
+            return new Result(a.textValue);
+        } else if (a.doubleValue < 0) {
+            return new Result("#NUM!");
+        } else {
+            return new Result(Math.sqrt(a.doubleValue));
         }
     }
 

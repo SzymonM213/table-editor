@@ -6,11 +6,8 @@ import java.awt.*;
 public class SpreadsheetEditor extends JFrame {
     public static final int COLS = 5;
     public static final int ROWS = 10;
-    private final JTable table;
     private final CustomTableModel model;
     private final Expression[][] expressions;
-    private int selectedRow = 0;
-    private int selectedCol = 0;
 
     public SpreadsheetEditor() {
         setTitle("Spreadsheet Editor");
@@ -20,12 +17,12 @@ public class SpreadsheetEditor extends JFrame {
         expressions = new Expression[ROWS][COLS];
         for (int i = 0; i < ROWS; i++) {
             for (int j = 0; j < COLS; j++) {
-                expressions[i][j] = new Expression(i, j);
+                expressions[i][j] = new Expression();
             }
         }
 
         model = new CustomTableModel(ROWS, COLS);
-        table = new JTable(model);
+        JTable table = new JTable(model);
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -47,8 +44,6 @@ public class SpreadsheetEditor extends JFrame {
                     String value = (String) model.getValueAt(row, col);
                     updateCell(row, col, value);
                 }
-                selectedCol = table.getSelectedColumn();
-                selectedRow = table.getSelectedRow();
         });
     }
 

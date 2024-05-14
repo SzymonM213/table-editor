@@ -1,22 +1,17 @@
 import java.util.*;
 
 public class Expression {
-    public final int row;
-    public final int col;
     private String expression;
     private Result value;
     public boolean hasValue;
     private Map<String, Expression> dependencies; // Cells on which this cell depends
     private final Map<String, Expression> dependents; // Cells which value depends on this cell
 
-    public Expression(int row, int col) {
-        this.row = row;
-        this.col = col;
+    public Expression() {
         this.dependents = new HashMap<>();
         this.dependencies = new HashMap<>();
         this.expression = "";
         this.hasValue = false;
-//        updateExpression("");
     }
 
     public void updateExpression(String expression) {
@@ -55,7 +50,7 @@ public class Expression {
                     // Function name
                     StringBuilder sb = new StringBuilder();
                     sb.append(c);
-                    while (i + 1 < this.expression.length() && Character.isLetter(this.expression.charAt(i + 1))) {
+                    while (i + 1 < this.expression.length() && Character.isUpperCase(this.expression.charAt(i + 1))) {
                         sb.append(this.expression.charAt(i + 1));
                         i++;
                     }
@@ -95,7 +90,7 @@ public class Expression {
                     if (c == ')' && last.equals("(")) return null;
                     if (!last.matches("-?\\d+(.\\d+)?|\\)")
                             && !Result.twoArgFunctions.containsKey(last)
-                            && Result.oneArgFunctions.containsKey(last)) return null;
+                            && !Result.oneArgFunctions.containsKey(last)) return null;
                 }
                 tokens.add(String.valueOf(c));
                 i++;
