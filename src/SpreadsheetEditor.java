@@ -25,7 +25,8 @@ public class SpreadsheetEditor extends JFrame {
         JTable table = new JTable(model);
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                           boolean hasFocus, int row, int column) {
                 if (expressions[row][column].hasValue) {
                     value = expressions[row][column].getValue();
                 }

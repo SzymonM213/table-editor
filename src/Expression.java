@@ -38,7 +38,8 @@ public class Expression {
                     // Cell reference
                     StringBuilder sb = new StringBuilder();
                     sb.append(c);
-                    while(i + 1 < this.expression.length() && this.expression.charAt(i + 1) >= '0' && this.expression.charAt(i + 1) <= '9') {
+                    while(i + 1 < this.expression.length() && this.expression.charAt(i + 1) >= '0' &&
+                            this.expression.charAt(i + 1) <= '9') {
                         sb.append(this.expression.charAt(i + 1));
                         i++;
                     }
