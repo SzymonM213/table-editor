@@ -23,6 +23,9 @@ public class Result {
             "MIN", Result::min,
             "MAX", Result::max
     );
+    private static final String ERROR = "#NAME!";
+    private static final String DIV_ZERO = "DIV/0!";
+    private static final String NUM = "#NUM!";
 
     public Result(String textValue) {
         this.textValue = textValue;
@@ -34,7 +37,7 @@ public class Result {
 
     public Result(List<String> tokens) {
         if (tokens == null) {
-            this.textValue = "#NAME?1";
+            this.textValue = ERROR;
         } else {
             int openedParentheses = 0;
             Stack<Result> values = new Stack<>();
@@ -55,7 +58,7 @@ public class Result {
                     // close parentheses
                     openedParentheses--;
                     if (openedParentheses < 0) {
-                        this.textValue = "#NAME?2";
+                        this.textValue = ERROR;
                         return;
                     }
                     while (operators.peek() != '(') {
@@ -71,7 +74,7 @@ public class Result {
                     operators.push(tokens.get(this.parseIndex).charAt(0));
                 } else if (tokens.get(this.parseIndex).equals(",")) {
                     // argument separator (should not be here)
-                    this.textValue = "#NAME?4";
+                    this.textValue = ERROR;
                     return;
                 } else if (tokens.get(this.parseIndex).matches("-?\\d+(\\.\\d+)?")) {
                     values.push(new Result(Double.parseDouble(tokens.get(this.parseIndex))));
@@ -84,7 +87,7 @@ public class Result {
                 values.push(applyOperator(values.pop(), values.pop(), operators.pop()));
             }
             if (values.size() != 1) {
-                this.textValue = "#NAME?6";
+                this.textValue = ERROR;
             } else {
                 Result result = values.pop();
                 this.textValue = result.textValue;
@@ -106,14 +109,14 @@ public class Result {
             case '-' -> subtract(b, a);
             case '*' -> multiply(b, a);
             case '/' -> divide(b, a);
-            default -> new Result("#NAME?7");
+            default -> new Result(ERROR);
         };
     }
 
     private Result oneArgOperation(List<String> tokens) {
         String operation = tokens.get(this.parseIndex);
         if (this.parseIndex + 1 == tokens.size() ||  !tokens.get(this.parseIndex + 1).equals("(")) {
-            return new Result("#NAME?8");
+            return new Result(ERROR);
         }
         this.parseIndex += 2;
         List<String> arg = new ArrayList<>();
@@ -122,7 +125,7 @@ public class Result {
             openedParentheses = getOpenedParentheses(tokens, arg, openedParentheses);
         }
         if (this.parseIndex == tokens.size() || !tokens.get(this.parseIndex).equals(")")) {
-            return new Result("#NAME?9");
+            return new Result(ERROR);
         }
         Result result = new Result(arg);
         return oneArgFunctions.get(operation).apply(result);
@@ -142,7 +145,7 @@ public class Result {
     private Result twoArgOperation(List<String> tokens) {
         String operation = tokens.get(this.parseIndex);
         if (this.parseIndex + 1 == tokens.size() ||  !tokens.get(this.parseIndex + 1).equals("(")) {
-            return new Result("#NAME?10.5");
+            return new Result(ERROR);
         }
         this.parseIndex += 2;
         List<String> arg1 = new ArrayList<>();
@@ -152,14 +155,14 @@ public class Result {
             openedParentheses = getOpenedParentheses(tokens, arg1, openedParentheses);
         }
         if (this.parseIndex == tokens.size()) {
-            return new Result("#NAME?11");
+            return new Result(ERROR);
         }
         this.parseIndex++;
         while (this.parseIndex != tokens.size() && (openedParentheses > 0 || !tokens.get(this.parseIndex).equals(")"))) {
             openedParentheses = getOpenedParentheses(tokens, arg2, openedParentheses);
         }
         if (this.parseIndex == tokens.size()) {
-            return new Result("#NAME?12");
+            return new Result(ERROR);
         }
         Result result1 = new Result(arg1);
         Result result2 = new Result(arg2);
@@ -201,8 +204,8 @@ public static Result subtract(Result a, Result b) {
             return new Result(a.textValue);
         } else if (b.textValue != null) {
             return new Result(b.textValue);
-        } else if (a.doubleValue == 0) {
-            return new Result("DIV/0!");
+        } else if (b.doubleValue == 0) {
+            return new Result(DIV_ZERO);
         }
         else {
             return new Result(a.doubleValue / b.doubleValue);
@@ -215,7 +218,7 @@ public static Result subtract(Result a, Result b) {
         } else if (b.textValue != null) {
             return new Result(b.textValue);
         } else if (a.doubleValue == 0 && b.doubleValue < 0) {
-            return new Result("DIV/0!");
+            return new Result(DIV_ZERO);
         }
         else {
             return new Result(Math.pow(a.doubleValue, b.doubleValue));
@@ -262,7 +265,7 @@ public static Result subtract(Result a, Result b) {
         if (a.textValue != null) {
             return new Result(a.textValue);
         } else if (a.doubleValue < 0) {
-            return new Result("#NUM!");
+            return new Result(NUM);
         } else {
             return new Result(Math.sqrt(a.doubleValue));
         }

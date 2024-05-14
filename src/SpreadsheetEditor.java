@@ -6,7 +6,7 @@ import java.awt.*;
 public class SpreadsheetEditor extends JFrame {
     public static final int COLS = 5;
     public static final int ROWS = 10;
-    private final CustomTableModel model;
+    private final DefaultTableModel model;
     private final Expression[][] expressions;
 
     public SpreadsheetEditor() {
@@ -21,7 +21,7 @@ public class SpreadsheetEditor extends JFrame {
             }
         }
 
-        model = new CustomTableModel(ROWS, COLS);
+        model = new DefaultTableModel(ROWS, COLS);
         JTable table = new JTable(model);
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
@@ -84,13 +84,11 @@ public class SpreadsheetEditor extends JFrame {
         }
     }
 
+    public void setCellValue(int row, int col, String value) {
+        model.setValueAt(value, row, col);
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new SpreadsheetEditor().setVisible(true));
-    }
-}
-
-class CustomTableModel extends DefaultTableModel {
-    public CustomTableModel(int rows, int cols) {
-        super(rows, cols);
     }
 }

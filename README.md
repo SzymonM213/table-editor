@@ -18,5 +18,8 @@ expression that starts with '='. It supports:
     using the cell's name (e.g. A1, B2, C3 where A, B, C are columns and 
     1, 2, 3 are rows).
 
-It's best to navigate the table using mouse (You can also use arrow keys,
+It's best to navigate the table using mouse only (You can also use arrow keys,
 but some cells won't refresh its value until you click on them).
+
+Some basic examples of usage are provided in the Main class, but You can
+also run the main method of the SpreadsheetEditor class to display an empty table.
